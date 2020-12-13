@@ -76,15 +76,32 @@ out/dtb-stamp: out/kernel-stamp
 out/KERNEL_OBJ/target-dtb: out/kernel-stamp out/dtb-stamp
 ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
 ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL),1)
-			ufdt_apply_overlay $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB) $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB_OVERLAY) $(KERNEL_OUT)/dtb-merged
+	if [ -n "$(KERNEL_IMAGE_DTB)" ]; then \
+		KERNEL_IMAGE_DTB=$(KERNEL_OUT)/$(KERNEL_IMAGE_DTB); \
+	else \
+		KERNEL_IMAGE_DTB=$$(find $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot -type f -iname \*.dtb | head -n 1); \
+	fi; \
+	if [ -n "$(KERNEL_IMAGE_DTB_OVERLAY)" ]; then \
+		KERNEL_IMAGE_DTB_OVERLAY=$(KERNEL_OUT)/$(KERNEL_IMAGE_DTB_OVERLAY); \
+	else \
+		KERNEL_IMAGE_DTB_OVERLAY=$$(find $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot -type f -iname \*.dtbo | head -n 1); \
+	fi; \
+	[ -n "$${KERNEL_IMAGE_DTB}" ] && [ -n "$${KERNEL_IMAGE_DTB_OVERLAY}" ] && \
+		ufdt_apply_overlay $${KERNEL_IMAGE_DTB} $${KERNEL_IMAGE_DTB_OVERLAY} $(KERNEL_OUT)/dtb-merged
 else
-			cp $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB) $(KERNEL_OUT)/dtb-merged
+	if [ -n "$(KERNEL_IMAGE_DTB)" ]; then \
+		KERNEL_IMAGE_DTB=$(KERNEL_OUT)/$(KERNEL_IMAGE_DTB); \
+	else \
+		KERNEL_IMAGE_DTB=$$(find $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot -type f -iname \*.dtb | head -n 1); \
+	fi; \
+	[ -n "$${KERNEL_IMAGE_DTB}" ] && \
+		cp $${KERNEL_IMAGE_DTB} $(KERNEL_OUT)/dtb-merged
 endif
-		cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) \
-			$(KERNEL_OUT)/dtb-merged \
-			> $@
+	cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) \
+		$(KERNEL_OUT)/dtb-merged \
+		> $@
 else
-		cp $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) $@
+	cp $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) $@
 endif
 
 out/KERNEL_OBJ/dtbo.img: out/dtb-stamp
@@ -92,7 +109,13 @@ ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
 ifdef KERNEL_IMAGE_DTB_OVERLAY_CONFIGURATION
 	mkdtboimg cfg_create $@ $(KERNEL_IMAGE_DTB_OVERLAY_CONFIGURATION) --dtb-dir $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB_OVERLAY_DTB_DIRECTORY)
 else
-	mkdtboimg create $@ $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB_OVERLAY)
+	if [ -n "$(KERNEL_IMAGE_DTB_OVERLAY)" ]; then \
+		KERNEL_IMAGE_DTB_OVERLAY=$(KERNEL_OUT)/$(KERNEL_IMAGE_DTB_OVERLAY); \
+	else \
+		KERNEL_IMAGE_DTB_OVERLAY=$$(find $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot -type f -iname \*.dtbo | head -n 1); \
+	fi; \
+	[ -n "$${KERNEL_IMAGE_DTB_OVERLAY}" ] && \
+		mkdtboimg create $@ $${KERNEL_IMAGE_DTB_OVERLAY}
 endif
 else
 	touch $@

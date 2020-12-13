@@ -21,6 +21,7 @@ Build-Depends: build-essential,
                linux-packaging-snippets,
                android-sdk-ufdt-tests,
                mkbootimg,
+               mkdtboimg,
                @DEB_TOOLCHAIN@
 Standards-Version: 4.5.0.3
 Vcs-Browser: https://github.com/hybris-mobian/linux-@VARIANT@-@DEVICE_VENDOR@-@DEVICE_MODEL@

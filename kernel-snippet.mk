@@ -75,16 +75,27 @@ out/dtb-stamp: out/kernel-stamp
 
 out/KERNEL_OBJ/target-dtb: out/kernel-stamp out/dtb-stamp
 ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
-ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
+ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL),1)
 			ufdt_apply_overlay $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB) $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB_OVERLAY) $(KERNEL_OUT)/dtb-merged
 else
-			cp $(KERNEL_IMAGE_DTB) $(KERNEL_OUT)/dtb-merged
+			cp $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB) $(KERNEL_OUT)/dtb-merged
 endif
 		cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) \
 			$(KERNEL_OUT)/dtb-merged \
 			> $@
 else
 		cp $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) $@
+endif
+
+out/KERNEL_OBJ/dtbo.img: out/dtb-stamp
+ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
+ifdef KERNEL_IMAGE_DTB_OVERLAY_CONFIGURATION
+	mkdtboimg cfg_create $@ $(KERNEL_IMAGE_DTB_OVERLAY_CONFIGURATION) --dtb-dir $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB_OVERLAY_DTB_DIRECTORY)
+else
+	mkdtboimg create $@ $(KERNEL_OUT)/$(KERNEL_IMAGE_DTB_OVERLAY)
+endif
+else
+	touch $@
 endif
 
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
@@ -102,7 +113,7 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
 
-override_dh_auto_build: out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/boot.img out/modules-stamp out/dtb-stamp
+override_dh_auto_build: out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/dtbo.img out/modules-stamp out/dtb-stamp
 
 override_dh_auto_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
@@ -115,6 +126,9 @@ override_dh_auto_install:
 
 	mkdir -p $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot
 	cp -v $(KERNEL_OUT)/boot.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/boot.img-$(KERNEL_RELEASE)
+ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
+	cp -v $(KERNEL_OUT)/dtbo.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/dtbo.img-$(KERNEL_RELEASE)
+endif
 
 	mkdir -p $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)
 	/usr/share/linux-packaging-snippets/extract_headers.sh $(KERNEL_RELEASE) $(CURDIR) $(KERNEL_OUT) $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE) $(KERNEL_ARCH)

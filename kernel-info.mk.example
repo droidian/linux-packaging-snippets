@@ -64,6 +64,38 @@ KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET = 0x00f00000
 KERNEL_BOOTIMAGE_TAGS_OFFSET = 0x00000100
 
 ########################################################################
+# Automatic flashing on package upgrades
+########################################################################
+
+# Whether to enable kernel upgrades on package upgrades. Use 0 (no) or 1.
+FLASH_ENABLED = 1
+
+# `flash-bootimage` defaults are enough for most recent devices, but legacy
+# devices won't work out of the box.
+# If you set the following to 1, this package will set `flash-bootimage`'s
+# DEVICE_IS_AB and BOOTIMAGE_SLOT_A accordingly, thus enabling flashing
+# on older devices.
+#
+# Do not enable if you don't know what you're doing
+FLASH_IS_LEGACY_DEVICE = 0
+
+# Device manufacturer. This must match the `ro.product.vendor.manufacturer`
+# Android property. If you don't want to specify this, leave it undefined,
+# FLASH_INFO_CPU will be checked instead.
+FLASH_INFO_MANUFACTURER = Vendor
+
+# Device model. This must match the `ro.product.vendor.model`
+# Android property. If you don't want to specify this, leave it undefined,
+# FLASH_INFO_CPU will be checked instead.
+FLASH_INFO_MODEL = Device1
+
+# Device CPU. This will be grepped against /proc/cpuinfo to check if
+# we're running on the specific device. Note this is a last-resort
+# method, specifying FLASH_INFO_MANUFACTURER and FLASH_INFO_MODEL is
+# recommended.
+FLASH_INFO_CPU = My Fictional System-on-a-Chip
+
+########################################################################
 # Kernel build settings
 ########################################################################
 

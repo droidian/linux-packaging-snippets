@@ -153,6 +153,34 @@ ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
 	cp -v $(KERNEL_OUT)/dtbo.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/dtbo.img-$(KERNEL_RELEASE)
 endif
 
+	# Generate flash-bootimage settings
+	mkdir -p $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage
+ifeq ($(FLASH_ENABLED), 1)
+
+	# Install postinst (perhaps this isn't the best place)
+	sed -e "s|@KERNEL_RELEASE@|$(KERNEL_RELEASE)|g" \
+		/usr/share/linux-packaging-snippets/linux-bootimage.postinst.in \
+			> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE).postinst
+	chmod +x $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE).postinst
+
+	sed -e "s|@KERNEL_BASE_VERSION@|$(KERNEL_BASE_VERSION)|g" \
+		-e "s|@VARIANT@|$(VARIANT)|g" \
+		-e "s|@FLASH_INFO_MANUFACTURER@|$(FLASH_INFO_MANUFACTURER)|g" \
+		-e "s|@FLASH_INFO_MODEL@|$(FLASH_INFO_MODEL)|g" \
+		-e "s|@FLASH_INFO_CPU@|$(FLASH_INFO_CPU)|g" \
+		/usr/share/linux-packaging-snippets/flash-bootimage-template.in \
+			> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf
+else
+	echo "FLASH_ENABLED=no" \
+		> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf
+endif
+
+	# Handle legacy devices
+ifeq ($(FLASH_IS_LEGACY_DEVICE), 1)
+	cat /usr/share/linux-packaging-snippets/flash-bootimage-template-legacy-extend.in \
+		>> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf
+endif
+
 	mkdir -p $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)
 	/usr/share/linux-packaging-snippets/extract_headers.sh $(KERNEL_RELEASE) $(CURDIR) $(KERNEL_OUT) $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE) $(KERNEL_ARCH)
 
@@ -160,6 +188,7 @@ override_dh_auto_clean:
 	rm -rf $(OUT)
 	rm -rf debian/path-override
 	rm -rf include/config/
+	rm -f debian/linux-*.postinst
 
 override_dh_strip:
 

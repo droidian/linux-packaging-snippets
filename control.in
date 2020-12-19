@@ -39,6 +39,7 @@ Description: Linux kernel for @DEVICE_FULL_NAME@
 
 Package: linux-bootimage-@KERNEL_BASE_VERSION@-@DEVICE_VENDOR@-@DEVICE_MODEL@
 Architecture: @DEB_BUILD_FOR@
+Pre-Depends: flash-bootimage
 Depends: ${misc:Depends},
          linux-image-@KERNEL_BASE_VERSION@-@DEVICE_VENDOR@-@DEVICE_MODEL@ (= ${binary:Version})
 Description: Linux kernel for @DEVICE_FULL_NAME@ - Android Boot Image

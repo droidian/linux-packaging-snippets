@@ -2,3 +2,5 @@ kernel-info.mk.example /usr/share/linux-packaging-snippets
 kernel-snippet.mk /usr/share/linux-packaging-snippets
 control.in /usr/share/linux-packaging-snippets
 extract_headers.sh /usr/share/linux-packaging-snippets
+flash-bootimage-template*.in /usr/share/linux-packaging-snippets
+linux-bootimage.postinst.in /usr/share/linux-packaging-snippets

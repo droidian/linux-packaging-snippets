@@ -1,0 +1,3 @@
+
+# Disable DTB Overlay, this kernel doesn't ship one (or is bundled in)
+DEVICE_HAS_DTBO_PARTITION=no

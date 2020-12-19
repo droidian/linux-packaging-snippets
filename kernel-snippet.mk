@@ -181,6 +181,13 @@ ifeq ($(FLASH_IS_LEGACY_DEVICE), 1)
 		>> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf
 endif
 
+	# Disable DTB Overlay flashing if this kernel doesn't support it
+	# Use shell features to check
+	if [ "$(KERNEL_IMAGE_WITH_DTB_OVERLAY)" != "1" ] || [ "$(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL)" == "1" ]; then \
+		cat /usr/share/linux-packaging-snippets/flash-bootimage-template-no-dtbo-extend.in \
+			>> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf; \
+	fi
+
 	mkdir -p $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)
 	/usr/share/linux-packaging-snippets/extract_headers.sh $(KERNEL_RELEASE) $(CURDIR) $(KERNEL_OUT) $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE) $(KERNEL_ARCH)
 

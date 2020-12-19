@@ -1,3 +1,7 @@
+########################################################################
+# Kernel settings
+########################################################################
+
 # Kernel variant. This is currently used only on the Source package name.
 # Use 'android' for Android kernels ("downstream") or 'mainline' for upstream
 # kernels.
@@ -58,6 +62,10 @@ KERNEL_BOOTIMAGE_KERNEL_OFFSET = 0x00008000
 KERNEL_BOOTIMAGE_INITRAMFS_OFFSET = 0x01000000
 KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET = 0x00f00000
 KERNEL_BOOTIMAGE_TAGS_OFFSET = 0x00000100
+
+########################################################################
+# Kernel build settings
+########################################################################
 
 # Whether to cross-build. Use 0 (no) or 1.
 BUILD_CROSS = 1

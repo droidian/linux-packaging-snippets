@@ -189,6 +189,7 @@ override_dh_auto_clean:
 	rm -rf debian/path-override
 	rm -rf include/config/
 	rm -f debian/linux-*.postinst
+	dh_clean
 
 override_dh_strip:
 

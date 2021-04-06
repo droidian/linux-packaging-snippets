@@ -183,7 +183,7 @@ endif
 
 	# Disable DTB Overlay flashing if this kernel doesn't support it
 	# Use shell features to check
-	if [ "$(KERNEL_IMAGE_WITH_DTB_OVERLAY)" != "1" ] || [ "$(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL)" == "1" ]; then \
+	if [ "$(KERNEL_IMAGE_WITH_DTB_OVERLAY)" != "1" ] || [ "$(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL)" = "1" ]; then \
 		cat /usr/share/linux-packaging-snippets/flash-bootimage-template-no-dtbo-extend.in \
 			>> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf; \
 	fi

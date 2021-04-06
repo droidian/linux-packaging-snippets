@@ -1,0 +1,3 @@
+
+# Disable vbmeta flashing, not required
+DEVICE_HAS_VBMETA_PARTITION=no

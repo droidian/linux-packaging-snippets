@@ -121,6 +121,17 @@ else
 	touch $@
 endif
 
+out/KERNEL_OBJ/vbmeta.img:
+ifeq ($(DEVICE_VBMETA_REQUIRED),1)
+ifeq ($(DEVICE_VBMETA_IS_SAMSUNG),0)
+	avbtool make_vbmeta_image --flags 2 --padding_size 4096 --set_hashtree_disabled_flag --output $@
+else
+	avbtool make_vbmeta_image --flags 0 --padding_size 4096 --set_hashtree_disabled_flag --output $@
+endif
+else
+	touch $@
+endif
+
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
 	mkbootimg \
 		--kernel $(KERNEL_OUT)/target-dtb \
@@ -136,7 +147,7 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
 
-override_dh_auto_build: out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/dtbo.img out/modules-stamp out/dtb-stamp
+override_dh_auto_build: out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/dtb-stamp
 
 override_dh_auto_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
@@ -151,6 +162,10 @@ override_dh_auto_install:
 	cp -v $(KERNEL_OUT)/boot.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/boot.img-$(KERNEL_RELEASE)
 ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
 	cp -v $(KERNEL_OUT)/dtbo.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/dtbo.img-$(KERNEL_RELEASE)
+endif
+
+ifeq ($(DEVICE_VBMETA_REQUIRED),1)
+	cp -v $(KERNEL_OUT)/vbmeta.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/vbmeta.img-$(KERNEL_RELEASE)
 endif
 
 	# Generate flash-bootimage settings
@@ -185,6 +200,13 @@ endif
 	# Use shell features to check
 	if [ "$(KERNEL_IMAGE_WITH_DTB_OVERLAY)" != "1" ] || [ "$(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL)" = "1" ]; then \
 		cat /usr/share/linux-packaging-snippets/flash-bootimage-template-no-dtbo-extend.in \
+			>> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf; \
+	fi
+
+	# Disable VBMETA flashing if we don't supply any
+	# Use shell features to check
+	if [ "$(DEVICE_VBMETA_REQUIRED)" != "1" ]; then \
+		cat /usr/share/linux-packaging-snippets/flash-bootimage-template-no-vbmeta.in \
 			>> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf; \
 	fi
 

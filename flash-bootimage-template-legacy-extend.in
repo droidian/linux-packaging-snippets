@@ -1,6 +1,6 @@
 
 # This device is legacy, so disable A/B
-DEVICE_IS_AB=no
+DEVICE_IS_LEGACY=yes
 
 # ...and ensure the boot partition doesn't point to boot_a
 BOOTIMAGE_SLOT_A="/dev/disk/by-partlabel/boot"

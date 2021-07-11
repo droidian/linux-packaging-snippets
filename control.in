@@ -21,7 +21,7 @@ Build-Depends: build-essential,
                linux-initramfs-halium-generic,
                linux-packaging-snippets,
                android-sdk-ufdt-tests,
-               mkbootimg,
+               mkbootimg (>= 10.0.0),
                mkdtboimg,
                avbtool,
                @DEB_TOOLCHAIN@

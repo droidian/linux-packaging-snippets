@@ -63,6 +63,14 @@ KERNEL_BOOTIMAGE_INITRAMFS_OFFSET = 0x01000000
 KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET = 0x00f00000
 KERNEL_BOOTIMAGE_TAGS_OFFSET = 0x00000100
 
+# Kernel bootimage version. Defaults to 0 (legacy header).
+# As a rule of thumb:
+# Devices launched with Android 8 and lower: version 0
+# Devices launched with Android 9: version 1
+# Devices launched with Android 10: version 2
+# Devices launched with Android 11: version 2 or 3 (GKI)
+KERNEL_BOOTIMAGE_VERSION = 0
+
 ########################################################################
 # Android verified boot
 ########################################################################

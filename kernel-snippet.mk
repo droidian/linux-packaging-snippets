@@ -143,6 +143,9 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
 		--tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "$(KERNEL_BOOTIMAGE_CMDLINE)" \
+ifdef KERNEL_BOOTIMAGE_VERSION
+		--header_version "$(KERNEL_BOOTIMAGE_VERSION)" \
+endif
 		-o $@
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare

@@ -43,6 +43,8 @@ ifeq ($(BUILD_CROSS), 1)
 endif
 BUILD_COMMAND = PATH=$(BUILD_PATH):$(CURDIR)/debian/path-override:${PATH} LDFLAGS="" CFLAGS="" $(MAKE) KERNELRELEASE=$(KERNEL_RELEASE) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(CROSS_COMPILE) CROSS_COMPILE_ARM32=$(CROSS_COMPILE) CLANG_TRIPLE=$(BUILD_CLANG_TRIPLET) -j$(NUMJOBS) O=$(KERNEL_OUT) CC=$(BUILD_CC)
 
+KERNEL_BOOTIMAGE_VERSION ?= 0
+
 debian/control:
 	sed -e "s|@KERNEL_BASE_VERSION@|$(KERNEL_BASE_VERSION)|g" \
 		-e "s|@VARIANT@|$(VARIANT)|g" \
@@ -143,9 +145,7 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
 		--tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "$(KERNEL_BOOTIMAGE_CMDLINE)" \
-ifdef KERNEL_BOOTIMAGE_VERSION
 		--header_version "$(KERNEL_BOOTIMAGE_VERSION)" \
-endif
 		-o $@
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare

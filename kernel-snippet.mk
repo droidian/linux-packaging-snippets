@@ -77,9 +77,13 @@ out/dtb-stamp: out/kernel-stamp
 
 out/KERNEL_OBJ/target-dtb: out/kernel-stamp out/dtb-stamp
 ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
+	rm -f $(KERNEL_OUT)/dtb
 ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL),1)
 	if [ -n "$(KERNEL_IMAGE_DTB)" ]; then \
-		KERNEL_IMAGE_DTB=$(KERNEL_OUT)/$(KERNEL_IMAGE_DTB); \
+		for dtb in $(KERNEL_IMAGE_DTB); do \
+			cat $(KERNEL_OUT)/$${dtb} >> $(KERNEL_OUT)/dtb; \
+		done; \
+		KERNEL_IMAGE_DTB=$(KERNEL_OUT)/dtb; \
 	else \
 		KERNEL_IMAGE_DTB=$$(find $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot -type f -iname \*.dtb | head -n 1); \
 	fi; \
@@ -92,7 +96,10 @@ ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL),1)
 		ufdt_apply_overlay $${KERNEL_IMAGE_DTB} $${KERNEL_IMAGE_DTB_OVERLAY} $(KERNEL_OUT)/dtb-merged
 else
 	if [ -n "$(KERNEL_IMAGE_DTB)" ]; then \
-		KERNEL_IMAGE_DTB=$(KERNEL_OUT)/$(KERNEL_IMAGE_DTB); \
+		for dtb in $(KERNEL_IMAGE_DTB); do \
+			cat $(KERNEL_OUT)/$${dtb} >> $(KERNEL_OUT)/dtb; \
+		done; \
+		KERNEL_IMAGE_DTB=$(KERNEL_OUT)/dtb; \
 	else \
 		KERNEL_IMAGE_DTB=$$(find $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot -type f -iname \*.dtb | head -n 1); \
 	fi; \

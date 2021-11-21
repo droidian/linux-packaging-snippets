@@ -75,9 +75,10 @@ out/dtb-stamp: out/kernel-stamp
 	$(BUILD_COMMAND) dtbs
 	touch $(OUT)/dtb-stamp
 
-out/KERNEL_OBJ/target-dtb: out/kernel-stamp out/dtb-stamp
+out/KERNEL_OBJ/dtb-merged: out/dtb-stamp
 ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
 	rm -f $(KERNEL_OUT)/dtb
+	rm -f $(KERNEL_OUT)/dtb-merged
 ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL),1)
 	if [ -n "$(KERNEL_IMAGE_DTB)" ]; then \
 		for dtb in $(KERNEL_IMAGE_DTB); do \
@@ -106,6 +107,12 @@ else
 	[ -n "$${KERNEL_IMAGE_DTB}" ] && \
 		cp $${KERNEL_IMAGE_DTB} $(KERNEL_OUT)/dtb-merged
 endif
+else
+	touch $@
+endif
+
+out/KERNEL_OBJ/target-dtb: out/kernel-stamp out/KERNEL_OBJ/dtb-merged
+ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
 	cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) \
 		$(KERNEL_OUT)/dtb-merged \
 		> $@
@@ -142,8 +149,13 @@ else
 endif
 
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
-	mkbootimg \
-		--kernel $(KERNEL_OUT)/target-dtb \
+	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET)"; \
+	else \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb"; \
+	fi; \
+	eval mkbootimg \
+		$${MKBOOTIMG_KERNEL_ARGS} \
 		--ramdisk /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic \
 		--base $(KERNEL_BOOTIMAGE_BASE_OFFSET) \
 		--kernel_offset $(KERNEL_BOOTIMAGE_KERNEL_OFFSET) \
@@ -151,8 +163,8 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
 		--second_offset $(KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET) \
 		--tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
-		--cmdline "$(KERNEL_BOOTIMAGE_CMDLINE)" \
-		--header_version "$(KERNEL_BOOTIMAGE_VERSION)" \
+		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE)\"" \
+		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
 		-o $@
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
@@ -163,7 +175,12 @@ override_dh_auto_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
 	$(BUILD_COMMAND) modules_install INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=$(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)
 	cp -v $(KERNEL_OUT)/System.map $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/System.map-$(KERNEL_RELEASE)
+ifeq ($(KERNEL_BOOTIMAGE_VERSION),2)
+	cp -v $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/$(KERNEL_BUILD_TARGET)-$(KERNEL_RELEASE)
+	cp -v $(KERNEL_OUT)/dtb-merged $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/dtb-$(KERNEL_RELEASE)
+else
 	cp -v $(KERNEL_OUT)/target-dtb $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/$(KERNEL_BUILD_TARGET)-$(KERNEL_RELEASE)
+endif
 	cp -v $(KERNEL_OUT)/.config $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/config-$(KERNEL_RELEASE)
 	rm -f $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)/build
 	rm -f $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)/source

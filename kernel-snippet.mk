@@ -58,7 +58,7 @@ debian/control:
 
 path-override-prepare:
 	mkdir -p debian/path-override
-	ln -s /usr/bin/python2 debian/path-override/python
+	ln -sf /usr/bin/python2 debian/path-override/python
 
 out/KERNEL_OBJ/.config: arch/$(KERNEL_ARCH)/configs/$(KERNEL_DEFCONFIG)
 	$(BUILD_COMMAND) defconfig KBUILD_DEFCONFIG=$(KERNEL_DEFCONFIG)

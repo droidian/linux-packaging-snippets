@@ -245,7 +245,7 @@ endif
 	fi
 
 	mkdir -p $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)
-	/usr/share/linux-packaging-snippets/extract_headers.sh $(KERNEL_RELEASE) $(CURDIR) $(KERNEL_OUT) $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE) $(KERNEL_ARCH)
+	/usr/share/linux-packaging-snippets/extract_headers.sh $(KERNEL_RELEASE) $(KERNEL_SOURCES) $(KERNEL_OUT) $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE) $(KERNEL_ARCH)
 
 override_dh_auto_clean:
 	rm -rf $(OUT)

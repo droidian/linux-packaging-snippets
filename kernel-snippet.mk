@@ -211,6 +211,7 @@ ifeq ($(FLASH_ENABLED), 1)
 		-e "s|@FLASH_INFO_MANUFACTURER@|$(FLASH_INFO_MANUFACTURER)|g" \
 		-e "s|@FLASH_INFO_MODEL@|$(FLASH_INFO_MODEL)|g" \
 		-e "s|@FLASH_INFO_CPU@|$(FLASH_INFO_CPU)|g" \
+		-e "s|@FLASH_INFO_DEVICE_IDS@|$(FLASH_INFO_DEVICE_IDS)|g" \
 		/usr/share/linux-packaging-snippets/flash-bootimage-template.in \
 			> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf
 else

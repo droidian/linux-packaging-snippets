@@ -124,6 +124,9 @@ FLASH_INFO_MODEL = Device1
 # recommended.
 FLASH_INFO_CPU = My Fictional System-on-a-Chip
 
+# Space-separated list of supported device ids as reported by fastboot
+FLASH_INFO_DEVICE_IDS = model1 model2
+
 ########################################################################
 # Kernel build settings
 ########################################################################

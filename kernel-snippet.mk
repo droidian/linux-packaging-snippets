@@ -161,6 +161,18 @@ out/KERNEL_OBJ/initramfs.gz:
 		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic $@; \
 	fi
 
+out/KERNEL_OBJ/recovery-initramfs.gz:
+	OVERLAY_DIR="$(CURDIR)/debian/recovery-initramfs-overlay"; \
+	if [ -e "$${OVERLAY_DIR}" ]; then \
+		tmpdir=$$(mktemp -d); \
+		cd $${tmpdir}; \
+		gunzip -c /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic | cpio -i;\
+		cp -Rv "$${OVERLAY_DIR}/*" .; \
+		find . | cpio -o -R 0:0 -H newc | gzip > $@; \
+	else \
+		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic $@; \
+	fi
+
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET)"; \
@@ -180,9 +192,28 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
 		-o $@
 
+out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ/target-dtb
+	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET)"; \
+	else \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb"; \
+	fi; \
+	eval mkbootimg \
+		$${MKBOOTIMG_KERNEL_ARGS} \
+		--ramdisk out/KERNEL_OBJ/recovery-initramfs.gz \
+		--base $(KERNEL_BOOTIMAGE_BASE_OFFSET) \
+		--kernel_offset $(KERNEL_BOOTIMAGE_KERNEL_OFFSET) \
+		--ramdisk_offset $(KERNEL_BOOTIMAGE_INITRAMFS_OFFSET) \
+		--second_offset $(KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET) \
+		--tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET) \
+		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
+		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE) halium.recovery\"" \
+		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
+		-o $@
+
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
 
-override_dh_auto_build: out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/dtb-stamp
+override_dh_auto_build: out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/dtb-stamp
 
 override_dh_auto_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
@@ -200,6 +231,7 @@ endif
 
 	mkdir -p $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot
 	cp -v $(KERNEL_OUT)/boot.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/boot.img-$(KERNEL_RELEASE)
+	cp -v $(KERNEL_OUT)/recovery.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/recovery.img-$(KERNEL_RELEASE)
 ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
 	cp -v $(KERNEL_OUT)/dtbo.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/dtbo.img-$(KERNEL_RELEASE)
 endif

@@ -149,7 +149,19 @@ else
 	touch $@
 endif
 
-out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
+out/KERNEL_OBJ/initramfs.gz:
+	OVERLAY_DIR="$(CURDIR)/debian/initramfs-overlay" \
+	if [ -e "$${OVERLAY_DIR}" ]; then \
+		tmpdir=$$(mktemp -d); \
+		cd $${tmpdir}; \
+		gunzip -c /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic | cpio -i; \
+		cp -Rv "$${OVERLAY_DIR}/*" .; \
+		find . | cpio -o -R 0:0 -H newc | gzip > $@; \
+	else \
+		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic $@; \
+	fi
+
+out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET)"; \
 	else \
@@ -157,7 +169,7 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/target-dtb
 	fi; \
 	eval mkbootimg \
 		$${MKBOOTIMG_KERNEL_ARGS} \
-		--ramdisk /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic \
+		--ramdisk out/KERNEL_OBJ/initramfs.gz \
 		--base $(KERNEL_BOOTIMAGE_BASE_OFFSET) \
 		--kernel_offset $(KERNEL_BOOTIMAGE_KERNEL_OFFSET) \
 		--ramdisk_offset $(KERNEL_BOOTIMAGE_INITRAMFS_OFFSET) \

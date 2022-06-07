@@ -36,6 +36,7 @@ endif
 export DEB_HOST_MULTIARCH = $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 KERNEL_RELEASE = $(KERNEL_BASE_VERSION)-$(DEVICE_VENDOR)-$(DEVICE_MODEL)
+BASEDIR = $(CURDIR)
 OUT = $(CURDIR)/out
 KERNEL_SOURCES ?= $(CURDIR)
 KERNEL_OUT = $(OUT)/KERNEL_OBJ
@@ -156,7 +157,7 @@ out/KERNEL_OBJ/initramfs.gz:
 		cd $${tmpdir}; \
 		gunzip -c /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic | cpio -i; \
 		cp -Rv $${OVERLAY_DIR}/* .; \
-		find . | cpio -o -R 0:0 -H newc | gzip > $@; \
+		find . | cpio -o -R 0:0 -H newc | gzip > $(BASEDIR)/$@; \
 	else \
 		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic $@; \
 	fi
@@ -170,7 +171,7 @@ out/KERNEL_OBJ/recovery-initramfs.gz:
 		gunzip -c /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic | cpio -i;\
 		[ -e "$${OVERLAY_DIR}" ] && cp -Rv $${OVERLAY_DIR}/* .; \
 		[ -e "$${RECOVERY_OVERLAY_DIR}" ] && cp -Rv $${RECOVERY_OVERLAY_DIR}/* .; \
-		find . | cpio -o -R 0:0 -H newc | gzip > $@; \
+		find . | cpio -o -R 0:0 -H newc | gzip > $(BASEDIR)/$@; \
 	else \
 		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic $@; \
 	fi

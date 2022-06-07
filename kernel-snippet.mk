@@ -162,12 +162,14 @@ out/KERNEL_OBJ/initramfs.gz:
 	fi
 
 out/KERNEL_OBJ/recovery-initramfs.gz:
-	OVERLAY_DIR="$(CURDIR)/debian/recovery-initramfs-overlay"; \
+	OVERLAY_DIR="$(CURDIR)/debian/initramfs-overlay"; \
+	RECOVERY_OVERLAY_DIR="$(CURDIR)/debian/recovery-initramfs-overlay"; \
 	if [ -e "$${OVERLAY_DIR}" ]; then \
 		tmpdir=$$(mktemp -d); \
 		cd $${tmpdir}; \
 		gunzip -c /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic | cpio -i;\
 		cp -Rv "$${OVERLAY_DIR}/*" .; \
+		cp -Rv "$${RECOVERY_OVERLAY_DIR}/*" .; \
 		find . | cpio -o -R 0:0 -H newc | gzip > $@; \
 	else \
 		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic $@; \

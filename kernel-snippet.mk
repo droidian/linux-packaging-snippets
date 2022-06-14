@@ -304,4 +304,6 @@ override_dh_auto_clean:
 
 override_dh_strip:
 
+override_dh_auto_test:
+
 .PHONY: path-override-prepare

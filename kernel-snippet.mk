@@ -211,6 +211,11 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 	else \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb"; \
 	fi; \
+	if [ -n "$(KERNEL_BOOTIMAGE_PATCH_LEVEL)" ]; then \
+			MKBOOTIMG_SPL_ARGS="--os_patch_level $(KERNEL_BOOTIMAGE_PATCH_LEVEL)"; \
+	else \
+			MKBOOTIMG_SPL_ARGS=""; \
+	fi; \
 	eval mkbootimg \
 		$${MKBOOTIMG_KERNEL_ARGS} \
 		--ramdisk out/KERNEL_OBJ/initramfs.gz \
@@ -222,6 +227,7 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE)\"" \
 		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
+		$${MKBOOTIMG_SPL_ARGS} \
 		-o $@
 
 out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ/target-dtb
@@ -229,6 +235,11 @@ out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET)"; \
 	else \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb"; \
+	fi; \
+	if [ -n "$(KERNEL_BOOTIMAGE_PATCH_LEVEL)" ]; then \
+			MKBOOTIMG_SPL_ARGS="--os_patch_level $(KERNEL_BOOTIMAGE_PATCH_LEVEL)"; \
+	else \
+			MKBOOTIMG_SPL_ARGS=""; \
 	fi; \
 	eval mkbootimg \
 		$${MKBOOTIMG_KERNEL_ARGS} \
@@ -241,6 +252,7 @@ out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE) halium.recovery\"" \
 		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
+		$${MKBOOTIMG_SPL_ARGS} \
 		-o $@
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare

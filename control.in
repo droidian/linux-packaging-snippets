@@ -6,6 +6,8 @@ Uploaders: Eugenio Paolantonio (g7) <eugenio@droidian.org>,
            r3vn <giuseppe@droidian.org>,
            Erfan Abdi <erfan@droidian.org>,
            Erik Inkinen <erik@droidian.org>,
+XS-Droidian-Host-Arch: @DEB_BUILD_FOR@
+XS-Droidian-Build-On: @DEB_BUILD_ON@
 Build-Depends: build-essential,
                dpkg-dev,
                findutils,

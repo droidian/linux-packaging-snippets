@@ -74,7 +74,7 @@ debian/control:
 
 path-override-prepare:
 	mkdir -p debian/path-override
-	ln -sf /usr/bin/python2 debian/path-override/python
+	ln -sf /opt/android/prebuilts/python/2.7.5/bin/python debian/path-override/python
 
 ifeq ($(KERNEL_CONFIG_USE_FRAGMENTS),1)
 out/KERNEL_OBJ/.config: path-override-prepare $(KERNEL_SOURCES)/arch/$(KERNEL_ARCH)/configs/$(KERNEL_DEFCONFIG)

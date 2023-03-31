@@ -259,7 +259,7 @@ override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-
 
 override_dh_auto_build: out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/dtb-stamp
 
-override_dh_auto_install:
+kernel_snippet_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
 	$(BUILD_COMMAND) modules_install INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=$(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)
 	cp -v $(KERNEL_OUT)/System.map $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/System.map-$(KERNEL_RELEASE)
@@ -336,6 +336,8 @@ endif
 	mkdir -p $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)
 	/usr/share/linux-packaging-snippets/extract_headers.sh $(KERNEL_RELEASE) $(KERNEL_SOURCES) $(KERNEL_OUT) $(CURDIR)/debian/linux-headers-$(KERNEL_RELEASE) $(KERNEL_ARCH)
 
+override_dh_auto_install: kernel_snippet_install
+
 override_dh_auto_clean:
 	rm -rf $(OUT)
 	rm -rf debian/path-override
@@ -347,4 +349,4 @@ override_dh_strip:
 
 override_dh_auto_test:
 
-.PHONY: path-override-prepare
+.PHONY: path-override-prepare kernel_snippet_install

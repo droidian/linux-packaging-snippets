@@ -207,9 +207,11 @@ out/KERNEL_OBJ/recovery-initramfs.gz:
 
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+	elif [ -f "$(KERNEL_PREBUILT_DT)" ]; then \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dt $(KERNEL_PREBUILT_DT)"; \
 	else \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	fi; \
 	if [ -n "$(KERNEL_BOOTIMAGE_PATCH_LEVEL)" ]; then \
 			MKBOOTIMG_SPL_ARGS="--os_patch_level $(KERNEL_BOOTIMAGE_PATCH_LEVEL)"; \
@@ -226,15 +228,16 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 		--tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE)\"" \
-		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
 		$${MKBOOTIMG_SPL_ARGS} \
 		-o $@
 
 out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ/target-dtb
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+	elif [ -n "$(KERNEL_PREBUILT_DT)" ]; then \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dt $(KERNEL_PREBUILT_DT)"; \
 	else \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	fi; \
 	if [ -n "$(KERNEL_BOOTIMAGE_PATCH_LEVEL)" ]; then \
 			MKBOOTIMG_SPL_ARGS="--os_patch_level $(KERNEL_BOOTIMAGE_PATCH_LEVEL)"; \
@@ -251,7 +254,6 @@ out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ
 		--tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE) halium.recovery\"" \
-		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
 		$${MKBOOTIMG_SPL_ARGS} \
 		-o $@
 

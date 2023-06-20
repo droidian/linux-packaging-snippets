@@ -131,6 +131,10 @@ FLASH_IS_AONLY = 0
 # Do not enable if you don't know what you're doing
 FLASH_IS_LEGACY_DEVICE = 0
 
+# On some exynos devices partition names are capitalized (boot is BOOT and so on)
+# This flag makes the kernel to get flashed to the correct partition on updates.
+FLASH_IS_EXYNOS = 0
+
 # Device manufacturer. This must match the `ro.product.vendor.manufacturer`
 # Android property. If you don't want to specify this, leave it undefined,
 # FLASH_INFO_CPU will be checked instead.

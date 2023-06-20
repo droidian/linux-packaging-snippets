@@ -1,0 +1,8 @@
+
+# This device is aonly, so disable A/B
+DEVICE_IS_AB=no
+
+# ...and ensure the various partitions don't point to _a
+BOOTIMAGE_SLOT_A="/dev/disk/by-partlabel/BOOT"
+DTBO_SLOT_A="/dev/disk/by-partlabel/DTBO"
+VBMETA_SLOT_A="/dev/disk/by-partlabel/VBMETA"

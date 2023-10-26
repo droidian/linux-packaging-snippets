@@ -175,6 +175,9 @@ BUILD_CLANG_TRIPLET = aarch64-linux-gnu-
 # The compiler to use. Recent Android kernels are built with clang.
 BUILD_CC = clang
 
+# Use llvm instead of gcc. Recent Android kernels (past android 12) need llvm.
+BUILD_LLVM = 1
+
 # Extra paths to prepend to the PATH variable. You'll probably want
 # to specify the clang path here (the default).
 BUILD_PATH = /usr/lib/llvm-android-6.0-4691093/bin

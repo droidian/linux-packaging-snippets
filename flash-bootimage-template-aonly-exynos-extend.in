@@ -2,6 +2,9 @@
 # This device is aonly, so disable A/B
 DEVICE_IS_AB=no
 
+# This device has capitalized partition names
+DEVICE_HAS_CAPITAL_NAME=yes
+
 # ...and ensure the various partitions don't point to _a
 BOOTIMAGE_SLOT_A="/dev/disk/by-partlabel/BOOT"
 DTBO_SLOT_A="/dev/disk/by-partlabel/DTBO"

@@ -2,5 +2,8 @@
 # This device is legacy, so disable A/B
 DEVICE_IS_LEGACY=yes
 
+# This device has capitalized partition names
+DEVICE_HAS_CAPITAL_NAME=yes
+
 # ...and ensure the boot partition doesn't point to boot_a
 BOOTIMAGE_SLOT_A="/dev/disk/by-partlabel/BOOT"

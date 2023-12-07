@@ -213,7 +213,9 @@ out/KERNEL_OBJ/recovery-initramfs.gz:
 	fi
 
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
-	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
+	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "4" ] || [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "3" ]; then \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+	elif [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	elif [ -f "$(KERNEL_PREBUILT_DT)" ]; then \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dt $(KERNEL_PREBUILT_DT)"; \
@@ -230,14 +232,15 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 	else \
 		MKBOOTIMG_OSV_ARGS=""; \
 	fi; \
+	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -lt "3" ]; then \
+		MKBOOTIMG_OFFSET_ARGS="--base $(KERNEL_BOOTIMAGE_BASE_OFFSET) --kernel_offset $(KERNEL_BOOTIMAGE_KERNEL_OFFSET) --ramdisk_offset $(KERNEL_BOOTIMAGE_INITRAMFS_OFFSET) --second_offset $(KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET) --tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET)"; \
+	else \
+		MKBOOTIMG_OFFSET_ARGS=""; \
+	fi; \
 	eval mkbootimg \
 		$${MKBOOTIMG_KERNEL_ARGS} \
+		$${MKBOOTIMG_OFFSET_ARGS} \
 		--ramdisk out/KERNEL_OBJ/initramfs.gz \
-		--base $(KERNEL_BOOTIMAGE_BASE_OFFSET) \
-		--kernel_offset $(KERNEL_BOOTIMAGE_KERNEL_OFFSET) \
-		--ramdisk_offset $(KERNEL_BOOTIMAGE_INITRAMFS_OFFSET) \
-		--second_offset $(KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET) \
-		--tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE)\"" \
 		$${MKBOOTIMG_SPL_ARGS} \
@@ -245,7 +248,9 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 		-o $@
 
 out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ/target-dtb
-	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
+	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "4" ] || [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "3" ]; then \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+	elif [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	elif [ -n "$(KERNEL_PREBUILT_DT)" ]; then \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dt $(KERNEL_PREBUILT_DT)"; \
@@ -262,14 +267,15 @@ out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ
 	else \
 		MKBOOTIMG_OSV_ARGS=""; \
 	fi; \
+	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -lt "3" ]; then \
+		MKBOOTIMG_OFFSET_ARGS="--base $(KERNEL_BOOTIMAGE_BASE_OFFSET) --kernel_offset $(KERNEL_BOOTIMAGE_KERNEL_OFFSET) --ramdisk_offset $(KERNEL_BOOTIMAGE_INITRAMFS_OFFSET) --second_offset $(KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET) --tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET)"; \
+	else \
+		MKBOOTIMG_OFFSET_ARGS=""; \
+	fi; \
 	eval mkbootimg \
 		$${MKBOOTIMG_KERNEL_ARGS} \
+		$${MKBOOTIMG_OFFSET_ARGS} \
 		--ramdisk out/KERNEL_OBJ/recovery-initramfs.gz \
-		--base $(KERNEL_BOOTIMAGE_BASE_OFFSET) \
-		--kernel_offset $(KERNEL_BOOTIMAGE_KERNEL_OFFSET) \
-		--ramdisk_offset $(KERNEL_BOOTIMAGE_INITRAMFS_OFFSET) \
-		--second_offset $(KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET) \
-		--tags_offset $(KERNEL_BOOTIMAGE_TAGS_OFFSET) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE) halium.recovery\"" \
 		$${MKBOOTIMG_SPL_ARGS} \

@@ -43,6 +43,7 @@ KERNEL_CONFIG_USE_DIFFCONFIG = 0
 KERNEL_DEFCONFIG = defconfig
 
 # Whether to include DTBs with the image. Use 0 (no) or 1.
+# GKI devices should set this to 0
 KERNEL_IMAGE_WITH_DTB = 1
 
 # Path to the DTB
@@ -51,6 +52,7 @@ KERNEL_IMAGE_WITH_DTB = 1
 # KERNEL_IMAGE_DTB = arch/arm64/boot/dts/qcom/my_dtb.dtb
 
 # Whether to include a DTB Overlay. Use 0 (no) or 1.
+# GKI devices should set this to 0
 KERNEL_IMAGE_WITH_DTB_OVERLAY = 1
 
 # Path to the DTB overlay.
@@ -61,6 +63,7 @@ KERNEL_IMAGE_WITH_DTB_OVERLAY = 1
 # Whether to include the DTB Overlay into the kernel image
 # Use 0 (no, default) or 1.
 # dtbo.img will always be shipped in the linux-bootimage- package.
+# GKI devices should set this to 0
 KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL = 0
 
 # Path to a specifc configuration file for mkdtboimg.
@@ -76,6 +79,7 @@ KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL = 0
 # KERNEL_PREBUILT_DT = debian/dt.img
 
 # Various other settings that will be passed straight to mkbootimg
+# GKI devices can leave BASE_OFFSET, KERNEL_OFFSET, INITRAMFS_OFFSET, SECOND_OFFSET and TAGS_OFFSET empty
 KERNEL_BOOTIMAGE_PAGE_SIZE = 4096
 KERNEL_BOOTIMAGE_BASE_OFFSET = 0x00000000
 KERNEL_BOOTIMAGE_KERNEL_OFFSET = 0x00008000
@@ -90,6 +94,7 @@ KERNEL_BOOTIMAGE_TAGS_OFFSET = 0x00000100
 # KERNEL_BOOTIMAGE_OS_VERSION = 12.0.0
 
 # Required for header version 2, ignore otherwise
+# GKI devices should leave this offset empty
 KERNEL_BOOTIMAGE_DTB_OFFSET = 0x1f00000
 
 # Kernel bootimage version. Defaults to 0 (legacy header).
@@ -98,6 +103,8 @@ KERNEL_BOOTIMAGE_DTB_OFFSET = 0x1f00000
 # Devices launched with Android 9: version 1
 # Devices launched with Android 10: version 2
 # Devices launched with Android 11: version 2 or 3 (GKI)
+# Devices launched with Android 12: version 3 (GKI) or 4 (GKI)
+# Devices launched with Android 13: version 3 (GKI) or 4 (GKI)
 KERNEL_BOOTIMAGE_VERSION = 0
 
 ########################################################################

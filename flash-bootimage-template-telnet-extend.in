@@ -1,0 +1,5 @@
+
+# Method to use when flashing userdata.img
+# If fastboot can't flash the image,
+# you should change this from "fastboot" to "telnet"
+USERDATA_FLASHING_METHOD=telnet

@@ -2,6 +2,11 @@
 # yes :)
 FLASH_BOOTIMAGE=yes
 
+# Method to use when flashing userdata.img
+# If fastboot can't flash the image,
+# you should change this from "fastboot" to "telnet"
+USERDATA_FLASHING_METHOD=fastboot
+
 # Device manufacturer. This will be checked against the `ro.product.vendor.manufacturer`
 # property.
 INFO_VENDOR_MANUFACTURER="@FLASH_INFO_MANUFACTURER@"

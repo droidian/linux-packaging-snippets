@@ -177,6 +177,7 @@ BUILD_CROSS = 1
 
 # (Cross-build only) The build triplet to use. You'll probably want to
 # use aarch64-linux-android- if building Android kernels.
+# might need to use aarch64-linux-gnu- with newer kernels such as GKI
 BUILD_TRIPLET = aarch64-linux-android-
 
 # (Cross-build only) The build triplet to use with clang. You'll probably
@@ -187,7 +188,7 @@ BUILD_CLANG_TRIPLET = aarch64-linux-gnu-
 BUILD_CC = clang
 
 # Use llvm instead of gcc. Recent Android kernels (past android 12) need llvm.
-BUILD_LLVM = 1
+BUILD_LLVM = 0
 
 # Extra paths to prepend to the PATH variable. You'll probably want
 # to specify the clang path here (the default).

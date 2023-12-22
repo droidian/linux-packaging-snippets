@@ -46,12 +46,12 @@ ifeq ($(BUILD_CROSS), 1)
 endif
 
 ifeq ($(BUILD_LLVM), 1)
-	MAKEOPTS := LLVM=1 LLVM_IAS=1 HOSTLDFLAGS="-fuse-ld=lld --rtlib=compiler-rt" HOSTLD=ld.lld LD=ld.lld
+	MAKEOPTS := LLVM=1 LLVM_IAS=1
 	HOSTLDFLAG := "-fuse-ld=lld --rtlib=compiler-rt"
 endif
 
 FULL_PATH = $(BUILD_PATH):$(CURDIR)/debian/path-override:${PATH}
-BUILD_COMMAND = PATH=$(FULL_PATH) LDFLAGS="" CFLAGS="" HOSTLDFLAGS=$(HOSTLDFLAG) $(MAKE) -C $(KERNEL_SOURCES) KERNELRELEASE=$(KERNEL_RELEASE) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(CROSS_COMPILE) CROSS_COMPILE_ARM32=$(CROSS_COMPILE) CLANG_TRIPLE=$(BUILD_CLANG_TRIPLET) -j$(NUMJOBS) O=$(KERNEL_OUT) CC=$(BUILD_CC) $(MAKEOPTS)
+BUILD_COMMAND = PATH=$(FULL_PATH) LDFLAGS="" CFLAGS="" HOSTLDFLAGS=$(HOSTLDFLAG) $(MAKE) -C $(KERNEL_SOURCES) KERNELRELEASE=$(KERNEL_RELEASE) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(CROSS_COMPILE) CROSS_COMPILE_ARM32=$(CROSS_COMPILE) CLANG_TRIPLE=$(BUILD_CLANG_TRIPLET) -j$(NUMJOBS) $(MAKEOPTS) O=$(KERNEL_OUT) CC=$(BUILD_CC)
 
 KERNEL_BOOTIMAGE_VERSION ?= 0
 
@@ -82,6 +82,8 @@ debian/control:
 path-override-prepare:
 	mkdir -p debian/path-override
 	ln -sf /opt/android/prebuilts/python/2.7.5/bin/python debian/path-override/python
+	ln -sf /opt/android/prebuilts/python/2.7.5/bin/python2 debian/path-override/python2
+	ln -sf /opt/android/prebuilts/python/2.7.5/bin/python2.7 debian/path-override/python2.7
 
 ifeq ($(KERNEL_CONFIG_USE_FRAGMENTS),1)
 out/KERNEL_OBJ/.config: path-override-prepare $(KERNEL_SOURCES)/arch/$(KERNEL_ARCH)/configs/$(KERNEL_DEFCONFIG)

@@ -55,6 +55,8 @@ BUILD_COMMAND = PATH=$(FULL_PATH) LDFLAGS="" CFLAGS="" HOSTLDFLAGS=$(HOSTLDFLAG)
 
 KERNEL_BOOTIMAGE_VERSION ?= 0
 
+KERNEL_INITRAMFS_COMPRESSION ?= gz
+
 ifndef KERNEL_CONFIG_COMMON_FRAGMENTS
 KERNEL_CONFIG_COMMON_FRAGMENTS += $(KERNEL_SOURCES)/droidian/common_fragments/halium.config
 KERNEL_CONFIG_COMMON_FRAGMENTS += $(KERNEL_SOURCES)/droidian/common_fragments/droidian.config
@@ -214,7 +216,33 @@ out/KERNEL_OBJ/recovery-initramfs.gz:
 		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic $@; \
 	fi
 
-out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
+out/KERNEL_OBJ/initramfs.lz4:
+	OVERLAY_DIR="$(CURDIR)/debian/initramfs-overlay"; \
+	if [ -e "$${OVERLAY_DIR}" ]; then \
+		tmpdir=$$(mktemp -d); \
+		cd $${tmpdir}; \
+		lz4 -c -d /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic.lz4 | cpio -i; \
+		cp -Rv $${OVERLAY_DIR}/* .; \
+		find . | cpio -o -R 0:0 -H newc | lz4 -9 -l > $(BASEDIR)/$@; \
+	else \
+		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic.lz4 $@; \
+	fi
+
+out/KERNEL_OBJ/recovery-initramfs.lz4:
+	OVERLAY_DIR="$(CURDIR)/debian/initramfs-overlay"; \
+	RECOVERY_OVERLAY_DIR="$(CURDIR)/debian/recovery-initramfs-overlay"; \
+	if [ -e "$${OVERLAY_DIR}" ] || [ -e "$${RECOVERY_OVERLAY_DIR}" ]; then \
+		tmpdir=$$(mktemp -d); \
+		cd $${tmpdir}; \
+		lz4 -c -d /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic.lz4 | cpio -i;\
+		[ -e "$${OVERLAY_DIR}" ] && cp -Rv $${OVERLAY_DIR}/* .; \
+		[ -e "$${RECOVERY_OVERLAY_DIR}" ] && cp -Rv $${RECOVERY_OVERLAY_DIR}/* .; \
+		find . | cpio -o -R 0:0 -H newc | lz4 -9 -l > $(BASEDIR)/$@; \
+	else \
+		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic.lz4 $@; \
+	fi
+
+out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/initramfs.lz4
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "4" ] || [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "3" ]; then \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	elif [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
@@ -242,14 +270,14 @@ out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz out/KERNEL_OBJ/target-dtb
 	eval mkbootimg \
 		$${MKBOOTIMG_KERNEL_ARGS} \
 		$${MKBOOTIMG_OFFSET_ARGS} \
-		--ramdisk out/KERNEL_OBJ/initramfs.gz \
+		--ramdisk out/KERNEL_OBJ/initramfs.$(KERNEL_INITRAMFS_COMPRESSION) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE)\"" \
 		$${MKBOOTIMG_SPL_ARGS} \
 		$${MKBOOTIMG_OSV_ARGS} \
 		-o $@
 
-out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ/target-dtb
+out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/recovery-initramfs.lz4
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "4" ] || [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "3" ]; then \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	elif [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
@@ -277,7 +305,7 @@ out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz out/KERNEL_OBJ
 	eval mkbootimg \
 		$${MKBOOTIMG_KERNEL_ARGS} \
 		$${MKBOOTIMG_OFFSET_ARGS} \
-		--ramdisk out/KERNEL_OBJ/recovery-initramfs.gz \
+		--ramdisk out/KERNEL_OBJ/recovery-initramfs.$(KERNEL_INITRAMFS_COMPRESSION) \
 		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
 		--cmdline "\"$(KERNEL_BOOTIMAGE_CMDLINE) halium.recovery\"" \
 		$${MKBOOTIMG_SPL_ARGS} \

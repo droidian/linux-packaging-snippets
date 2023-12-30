@@ -107,6 +107,11 @@ KERNEL_BOOTIMAGE_DTB_OFFSET = 0x1f00000
 # Devices launched with Android 13: version 3 (GKI) or 4 (GKI)
 KERNEL_BOOTIMAGE_VERSION = 0
 
+# Kernel initramfs compression. Defaults to gzip.
+# All non-gki devices need a gzip (gz) initramfs
+# For devices launched with a GKI kernel it can be either gzip (gz) or lz4 (lz4)
+KERNEL_INITRAMFS_COMPRESSION = gz
+
 ########################################################################
 # Android verified boot
 ########################################################################

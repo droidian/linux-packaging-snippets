@@ -95,11 +95,13 @@ ifeq ($(KERNEL_CONFIG_USE_DIFFCONFIG),1)
 else
 	$(BUILD_COMMAND) defconfig KBUILD_DEFCONFIG=$(KERNEL_DEFCONFIG)
 endif
-	cd $(KERNEL_SOURCES) ; PATH=$(FULL_PATH) ARCH=$(KERNEL_ARCH) $(KERNEL_SOURCES)/scripts/kconfig/merge_config.sh -O $(KERNEL_OUT) \
+	cd $(KERNEL_SOURCES) ; \
+	PATH=$(FULL_PATH) ARCH=$(KERNEL_ARCH) $(KERNEL_SOURCES)/scripts/kconfig/merge_config.sh -m -O $(KERNEL_OUT) \
 		$(KERNEL_OUT)/.config \
 		$(KERNEL_CONFIG_COMMON_FRAGMENTS) \
 		$(KERNEL_CONFIG_DEVICE_FRAGMENTS) \
-		;
+		; \
+	$(BUILD_COMMAND) KCONFIG_ALLCONFIG=$(KERNEL_OUT)/.config alldefconfig ;
 else
 out/KERNEL_OBJ/.config: path-override-prepare $(KERNEL_SOURCES)/arch/$(KERNEL_ARCH)/configs/$(KERNEL_DEFCONFIG)
 	$(BUILD_COMMAND) defconfig KBUILD_DEFCONFIG=$(KERNEL_DEFCONFIG)

@@ -101,7 +101,7 @@ endif
 		$(KERNEL_CONFIG_DEVICE_FRAGMENTS) \
 		;
 else
-out/KERNEL_OBJ/.config: $(KERNEL_SOURCES)/arch/$(KERNEL_ARCH)/configs/$(KERNEL_DEFCONFIG)
+out/KERNEL_OBJ/.config: path-override-prepare $(KERNEL_SOURCES)/arch/$(KERNEL_ARCH)/configs/$(KERNEL_DEFCONFIG)
 	$(BUILD_COMMAND) defconfig KBUILD_DEFCONFIG=$(KERNEL_DEFCONFIG)
 endif
 

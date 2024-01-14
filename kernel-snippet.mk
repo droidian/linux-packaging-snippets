@@ -161,11 +161,11 @@ endif
 
 out/KERNEL_OBJ/target-dtb.%: out/kernel-stamp.% out/KERNEL_OBJ/dtb-merged
 ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
-	cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$* \
+	cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$* \
 		$(KERNEL_OUT)/dtb-merged \
 		> $@
 else
-	cp $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$* $@
+	cp $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$* $@
 endif
 
 out/KERNEL_OBJ/target-dtb.default: out/kernel-stamp.default out/KERNEL_OBJ/dtb-merged
@@ -263,18 +263,19 @@ out/KERNEL_OBJ/initramfs.default: out/KERNEL_OBJ/initramfs.$(KERNEL_INITRAMFS_CO
 	cp out/KERNEL_OBJ/initramfs.$(KERNEL_INITRAMFS_COMPRESSION) $@
 
 out/KERNEL_OBJ/initramfs.recovery-default: out/KERNEL_OBJ/initramfs.recovery-$(KERNEL_INITRAMFS_COMPRESSION)
-	cp out/KERNEL_OBJ/recovery-initramfs.$(KERNEL_INITRAMFS_COMPRESSION) $@
+	cp out/KERNEL_OBJ/initramfs.recovery-$(KERNEL_INITRAMFS_COMPRESSION) $@
 
 out/KERNEL_OBJ/target-dtb.recovery-%: out/KERNEL_OBJ/target-dtb.%
 	cp -v $< $@
 
-out/KERNEL_OBJ/%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.%
+out/KERNEL_OBJ/boot-%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.%
+	KERNEL_IMAGE_TYPE="$$(echo $* | sed -s 's|recovery-||')"; \
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "4" ] || [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "3" ]; then \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$* --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$${KERNEL_IMAGE_TYPE} --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	elif [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$* --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$${KERNEL_IMAGE_TYPE} --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	elif [ -f "$(KERNEL_PREBUILT_DT)" ]; then \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$* --dt $(KERNEL_PREBUILT_DT)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$${KERNEL_IMAGE_TYPE} --dt $(KERNEL_PREBUILT_DT)"; \
 	else \
 		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb.$* --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	fi; \
@@ -303,25 +304,25 @@ out/KERNEL_OBJ/%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.%
 		$${MKBOOTIMG_OSV_ARGS} \
 		-o $@
 
-out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/default.img
+out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/boot-default.img
 	cp -v $< $@
 
-out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-default.img
+out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/boot-recovery-default.img
 	cp -v $< $@
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
 
-override_dh_auto_build: out/KERNEL_OBJ/target-dtb out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/dtb-stamp
+override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/dtb-stamp
 
 kernel_snippet_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
 	$(BUILD_COMMAND) modules_install INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=$(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)
 	cp -v $(KERNEL_OUT)/System.map $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/System.map-$(KERNEL_RELEASE)
 ifeq ($(KERNEL_BOOTIMAGE_VERSION),2)
-	cp -v $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/$(KERNEL_BUILD_TARGET)-$(KERNEL_RELEASE)
+	cp -v $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.default $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/$(KERNEL_BUILD_TARGET)-$(KERNEL_RELEASE)
 	cp -v $(KERNEL_OUT)/dtb-merged $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/dtb-$(KERNEL_RELEASE)
 else
-	cp -v $(KERNEL_OUT)/target-dtb $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/$(KERNEL_BUILD_TARGET)-$(KERNEL_RELEASE)
+	cp -v $(KERNEL_OUT)/target-dtb.default $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/$(KERNEL_BUILD_TARGET)-$(KERNEL_RELEASE)
 endif
 	cp -v $(KERNEL_OUT)/.config $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/config-$(KERNEL_RELEASE)
 	rm -f $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)/build

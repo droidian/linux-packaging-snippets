@@ -107,15 +107,19 @@ out/KERNEL_OBJ/.config: path-override-prepare $(KERNEL_SOURCES)/arch/$(KERNEL_AR
 	$(BUILD_COMMAND) defconfig KBUILD_DEFCONFIG=$(KERNEL_DEFCONFIG)
 endif
 
-out/kernel-stamp: out/KERNEL_OBJ/.config
-	$(BUILD_COMMAND) $(KERNEL_BUILD_TARGET)
-	touch $(OUT)/kernel-stamp
+out/kernel-stamp.%: out/KERNEL_OBJ/.config
+	$(BUILD_COMMAND) Image.$*
+	touch $(OUT)/kernel-stamp.$*
 
-out/modules-stamp: out/kernel-stamp out/dtb-stamp
+out/kernel-stamp.default: out/KERNEL_OBJ/.config
+	$(BUILD_COMMAND) $(KERNEL_DEFAULT_TARGET)
+	touch $(OUT)/kernel-stamp.default
+
+out/modules-stamp: out/kernel-stamp.default out/dtb-stamp
 	$(BUILD_COMMAND) modules
 	touch $(OUT)/modules-stamp
 
-out/dtb-stamp: out/kernel-stamp
+out/dtb-stamp: out/kernel-stamp.default
 	$(BUILD_COMMAND) dtbs
 	touch $(OUT)/dtb-stamp
 
@@ -155,7 +159,16 @@ else
 	touch $@
 endif
 
-out/KERNEL_OBJ/target-dtb: out/kernel-stamp out/KERNEL_OBJ/dtb-merged
+out/KERNEL_OBJ/target-dtb.%: out/kernel-stamp.% out/KERNEL_OBJ/dtb-merged
+ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
+	cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$* \
+		$(KERNEL_OUT)/dtb-merged \
+		> $@
+else
+	cp $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$* $@
+endif
+
+out/KERNEL_OBJ/target-dtb.default: out/kernel-stamp.default out/KERNEL_OBJ/dtb-merged
 ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
 	cat $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) \
 		$(KERNEL_OUT)/dtb-merged \
@@ -163,6 +176,8 @@ ifeq ($(KERNEL_IMAGE_WITH_DTB),1)
 else
 	cp $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) $@
 endif
+	# Keep the build target around as Image.default
+	cp $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.default
 
 out/KERNEL_OBJ/dtbo.img: out/dtb-stamp
 ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
@@ -204,7 +219,7 @@ out/KERNEL_OBJ/initramfs.gz:
 		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic $@; \
 	fi
 
-out/KERNEL_OBJ/recovery-initramfs.gz:
+out/KERNEL_OBJ/initramfs.recovery-gz:
 	OVERLAY_DIR="$(CURDIR)/debian/initramfs-overlay"; \
 	RECOVERY_OVERLAY_DIR="$(CURDIR)/debian/recovery-initramfs-overlay"; \
 	if [ -e "$${OVERLAY_DIR}" ] || [ -e "$${RECOVERY_OVERLAY_DIR}" ]; then \
@@ -230,7 +245,7 @@ out/KERNEL_OBJ/initramfs.lz4:
 		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic.lz4 $@; \
 	fi
 
-out/KERNEL_OBJ/recovery-initramfs.lz4:
+out/KERNEL_OBJ/initramfs.recovery-lz4:
 	OVERLAY_DIR="$(CURDIR)/debian/initramfs-overlay"; \
 	RECOVERY_OVERLAY_DIR="$(CURDIR)/debian/recovery-initramfs-overlay"; \
 	if [ -e "$${OVERLAY_DIR}" ] || [ -e "$${RECOVERY_OVERLAY_DIR}" ]; then \
@@ -244,15 +259,24 @@ out/KERNEL_OBJ/recovery-initramfs.lz4:
 		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/recovery-initramfs.img-halium-generic.lz4 $@; \
 	fi
 
-out/KERNEL_OBJ/%.img: out/KERNEL_OBJ/% out/KERNEL_OBJ/target-dtb
+out/KERNEL_OBJ/initramfs.default: out/KERNEL_OBJ/initramfs.$(KERNEL_INITRAMFS_COMPRESSION)
+	cp out/KERNEL_OBJ/initramfs.$(KERNEL_INITRAMFS_COMPRESSION) $@
+
+out/KERNEL_OBJ/initramfs.recovery-default: out/KERNEL_OBJ/initramfs.recovery-$(KERNEL_INITRAMFS_COMPRESSION)
+	cp out/KERNEL_OBJ/recovery-initramfs.$(KERNEL_INITRAMFS_COMPRESSION) $@
+
+out/KERNEL_OBJ/target-dtb.recovery-%: out/KERNEL_OBJ/target-dtb.%
+	cp -v $< $@
+
+out/KERNEL_OBJ/%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.%
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "4" ] || [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "3" ]; then \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$* --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	elif [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "2" ]; then \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$* --dtb $(KERNEL_OUT)/dtb-merged --dtb_offset $(KERNEL_BOOTIMAGE_DTB_OFFSET) --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	elif [ -f "$(KERNEL_PREBUILT_DT)" ]; then \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_BUILD_TARGET) --dt $(KERNEL_PREBUILT_DT)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/Image.$* --dt $(KERNEL_PREBUILT_DT)"; \
 	else \
-		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
+		MKBOOTIMG_KERNEL_ARGS="--kernel $(KERNEL_OUT)/target-dtb.$* --header_version $(KERNEL_BOOTIMAGE_VERSION)"; \
 	fi; \
 	if [ -n "$(KERNEL_BOOTIMAGE_PATCH_LEVEL)" ]; then \
 			MKBOOTIMG_SPL_ARGS="--os_patch_level $(KERNEL_BOOTIMAGE_PATCH_LEVEL)"; \
@@ -279,11 +303,11 @@ out/KERNEL_OBJ/%.img: out/KERNEL_OBJ/% out/KERNEL_OBJ/target-dtb
 		$${MKBOOTIMG_OSV_ARGS} \
 		-o $@
 
-out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/initramfs.gz.img out/KERNEL_OBJ/initramfs.lz4.img
-	cp out/KERNEL_OBJ/initramfs.$(KERNEL_INITRAMFS_COMPRESSION).img $@
+out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/default.img
+	cp -v $< $@
 
-out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-initramfs.gz.img out/KERNEL_OBJ/recovery-initramfs.lz4.img
-	cp out/KERNEL_OBJ/recovery-initramfs.$(KERNEL_INITRAMFS_COMPRESSION).img $@
+out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/recovery-default.img
+	cp -v $< $@
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
 

@@ -119,11 +119,18 @@ out/kernel-stamp.default: out/KERNEL_OBJ/.config
 	$(BUILD_COMMAND) $(KERNEL_BUILD_TARGET)
 	touch $(OUT)/kernel-stamp.default
 
-ifneq ($(BUILD_SKIP_MODULES),1)
 out/modules-stamp: out/kernel-stamp.default out/dtb-stamp
+ifneq ($(BUILD_SKIP_MODULES),1)
 	$(BUILD_COMMAND) modules
-	touch $(OUT)/modules-stamp
 endif
+	touch $(OUT)/modules-stamp
+
+out/KERNEL_OBJ/modules-installed-stamp: out/modules-stamp
+ifneq ($(BUILD_SKIP_MODULES),1)
+	mkdir -p $(KERNEL_OUT)/kernel-modules/
+	$(BUILD_COMMAND) modules_install INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=$(KERNEL_OUT)/kernel-modules/
+endif
+	touch $@
 
 out/dtb-stamp: out/kernel-stamp.default
 	$(BUILD_COMMAND) dtbs
@@ -318,16 +325,15 @@ out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/boot-recovery-default.img
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
 
-ifneq ($(BUILD_SKIP_MODULES),1)
-override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/dtb-stamp
-else
-override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/dtb-stamp
-endif
+override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/KERNEL_OBJ/modules-installed-stamp out/dtb-stamp
 
 kernel_snippet_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
 ifneq ($(BUILD_SKIP_MODULES),1)
-	$(BUILD_COMMAND) modules_install INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=$(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)
+	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules
+	cp -Rav $(CURDIR)/out/KERNEL_OBJ/kernel-modules/lib/modules/* $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules/
+	rm -f $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)/build
+	rm -f $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)/source
 endif
 	cp -v $(KERNEL_OUT)/System.map $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/System.map-$(KERNEL_RELEASE)
 ifeq ($(KERNEL_BOOTIMAGE_VERSION),2)
@@ -337,10 +343,6 @@ else
 	cp -v $(KERNEL_OUT)/target-dtb.default $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/$(KERNEL_BUILD_TARGET)-$(KERNEL_RELEASE)
 endif
 	cp -v $(KERNEL_OUT)/.config $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot/config-$(KERNEL_RELEASE)
-ifneq ($(BUILD_SKIP_MODULES),1)
-	rm -f $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)/build
-	rm -f $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/lib/modules/$(KERNEL_RELEASE)/source
-endif
 
 	mkdir -p $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot
 	cp -v $(KERNEL_OUT)/boot.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/boot.img-$(KERNEL_RELEASE)

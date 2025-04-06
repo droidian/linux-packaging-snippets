@@ -316,6 +316,9 @@ out/KERNEL_OBJ/boot-%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.
 		$${MKBOOTIMG_SPL_ARGS} \
 		$${MKBOOTIMG_OSV_ARGS} \
 		-o $@
+	if [ -n "$(KERNEL_BOOTIMAGE_PARTITION_SIZE)" ]; then \
+		avbtool add_hash_footer --image $@ --partition_name boot --partition_size $(KERNEL_BOOTIMAGE_PARTITION_SIZE); \
+	fi;
 
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/boot-default.img
 	cp -v $< $@

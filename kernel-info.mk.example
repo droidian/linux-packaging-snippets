@@ -115,6 +115,19 @@ KERNEL_BOOTIMAGE_VERSION = 0
 # For devices launched with a GKI kernel it can be either gzip (gz) or lz4 (lz4)
 KERNEL_INITRAMFS_COMPRESSION = gz
 
+# Whether to generate a vendor_boot image. Supported since
+# bootimage version 3.
+# vendor_boot images will contain the required kernel modules that
+# are to be loaded during the initramfs stage.
+# If building for a device with bootimage version >= 3, you
+# should probably want to enable it.
+#
+# Module list should be added in KERNEL_DIR/droidian/modules.load.
+KERNEL_BOOTIMAGE_GENERATE_VENDOR_BOOT = 0
+
+# The cmdline for the vendor_boot image
+KERNEL_BOOTIMAGE_VENDOR_CMDLINE = 
+
 ########################################################################
 # Android verified boot
 ########################################################################

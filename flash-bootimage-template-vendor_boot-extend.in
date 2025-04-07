@@ -1,0 +1,3 @@
+
+# This device has a vendor_boot partition
+DEVICE_HAS_VENDORBOOT_PARTITION=yes

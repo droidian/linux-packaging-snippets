@@ -220,6 +220,44 @@ else
 	touch $@
 endif
 
+out/KERNEL_OBJ/vendor_boot_ramdisk: out/KERNEL_OBJ/modules-installed-stamp
+	if [ "$(KERNEL_BOOTIMAGE_GENERATE_VENDOR_BOOT)" = 1 ] && [ "$(BUILD_SKIP_MODULES)" != 1 ] && [ -e $(CURDIR)/droidian/modules.load ]; then \
+		mkdir -p $(KERNEL_OUT)/vendor_boot_ramdisk_content/lib/modules; \
+		sed -e 's|^|-or -name |g' $(CURDIR)/droidian/modules.load* | \
+			xargs find $(KERNEL_OUT)/kernel-modules/ -type f -name DROIDIAN | \
+			while read line; do \
+				cp -v $${line} $(KERNEL_OUT)/vendor_boot_ramdisk_content/lib/modules; \
+			done; \
+		sed -e 's|^|-e |g'  -e 's|$$|:|g' $(CURDIR)/droidian/modules.load* | \
+			xargs grep $(KERNEL_OUT)/kernel-modules/lib/modules/*/modules.dep -e DROIDIAN | \
+			cut -d":" -f2 | \
+			sed -e 's| |\n|g' | \
+			sort -u | \
+			grep -oe '[\w\-\_\.]*.ko' | \
+			sed -e 's|^|-or -name |g' | \
+			xargs find  $(KERNEL_OUT)//kernel-modules/ -type f -name DROIDIAN | \
+			while read line; do \
+				cp -v $${line} $(KERNEL_OUT)/vendor_boot_ramdisk_content/lib/modules; \
+			done; \
+		awk -F'[ \t]+' '{for(i=1;i<=NF;i++){if($$i=="")continue;if($$i~/:|:$$/){split($$i,a,":");split(a[1],p,"/");printf"/lib/modules/%s: ",p[length(p)]}else{split($$i,p,"/");printf"/lib/modules/%s ",p[length(p)]}}print""}' $(KERNEL_OUT)/kernel-modules/lib/modules/*/modules.dep \
+			> $(KERNEL_OUT)/vendor_boot_ramdisk_content/lib/modules/modules.dep; \
+		cp -v $(KERNEL_OUT)/kernel-modules/lib/modules/*/modules.alias $(KERNEL_OUT)/vendor_boot_ramdisk_content/lib/modules/; \
+		cp -v $(KERNEL_OUT)/kernel-modules/lib/modules/*/modules.softdep $(KERNEL_OUT)/vendor_boot_ramdisk_content/lib/modules/; \
+		cp -v $(CURDIR)/droidian/modules.load* $(KERNEL_OUT)/vendor_boot_ramdisk_content/lib/modules/; \
+		if [ "$(KERNEL_INITRAMFS_COMPRESSION)" = "lz4" ]; then \
+			COMPRESSION_CMD="lz4 -9 -l"; \
+		elif [ "$(KERNEL_INITRAMFS_COMPRESSION)" = "gz" ]; then \
+			COMPRESSION_CMD="gzip"; \
+		else \
+			echo "Unknown compression format for vendor_boot image"; \
+			exit 1; \
+		fi; \
+		cd $(KERNEL_OUT)/vendor_boot_ramdisk_content/; \
+		find . | cpio -o -H newc | $${COMPRESSION_CMD} > $(CURDIR)/$@; \
+	else \
+		touch $@; \
+	fi;
+
 out/KERNEL_OBJ/initramfs.gz:
 	OVERLAY_DIR="$(CURDIR)/debian/initramfs-overlay"; \
 	if [ -e "$${OVERLAY_DIR}" ]; then \
@@ -281,6 +319,34 @@ out/KERNEL_OBJ/initramfs.recovery-default: out/KERNEL_OBJ/initramfs.recovery-$(K
 out/KERNEL_OBJ/target-dtb.recovery-%: out/KERNEL_OBJ/target-dtb.%
 	cp -v $< $@
 
+out/KERNEL_OBJ/vendor_boot-%.img: out/KERNEL_OBJ/dtb-merged out/KERNEL_OBJ/vendor_boot_ramdisk
+	KERNEL_IMAGE_TYPE="$$(echo $* | sed -s 's|recovery-||')"; \
+	if [ "$(KERNEL_BOOTIMAGE_GENERATE_VENDOR_BOOT)" -eq "1" ]; then \
+		MKBOOTIMG_KERNEL_ARGS="" ; \
+		if [ -n "$(KERNEL_BOOTIMAGE_VENDOR_CMDLINE)" ]; then \
+			MKBOOTIMG_KERNEL_ARGS="$${MKBOOTIMG_KERNEL_ARGS} --vendor_cmdline '$(KERNEL_BOOTIMAGE_VENDOR_CMDLINE)'"; \
+		fi; \
+		if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "3" ]; then \
+			MKBOOTIMG_KERNEL_ARGS="$${MKBOOTIMG_KERNEL_ARGS} --vendor_ramdisk $(KERNEL_OUT)/vendor_boot_ramdisk"; \
+		elif [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "4" ]; then \
+			MKBOOTIMG_KERNEL_ARGS="$${MKBOOTIMG_KERNEL_ARGS} --ramdisk_type platform --ramdisk_name '' --vendor_ramdisk_fragment $(KERNEL_OUT)/vendor_boot_ramdisk"; \
+		fi; \
+		eval mkbootimg \
+			--dtb $(KERNEL_OUT)/dtb-merged \
+			--header_version $(KERNEL_BOOTIMAGE_VERSION) \
+			$${MKBOOTIMG_KERNEL_ARGS} \
+			--base "$(KERNEL_BOOTIMAGE_BASE_OFFSET)" \
+			--kernel_offset "$(KERNEL_BOOTIMAGE_KERNEL_OFFSET)" \
+			--ramdisk_offset "$(KERNEL_BOOTIMAGE_INITRAMFS_OFFSET)" \
+			--second_offset "$(KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET)" \
+			--tags_offset "$(KERNEL_BOOTIMAGE_TAGS_OFFSET)" \
+			--dtb_offset "$(KERNEL_BOOTIMAGE_DTB_OFFSET)" \
+			--pagesize "$(KERNEL_BOOTIMAGE_PAGE_SIZE)" \
+			--vendor_boot $@; \
+	else \
+		touch $@; \
+	fi;
+
 out/KERNEL_OBJ/boot-%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.%
 	KERNEL_IMAGE_TYPE="$$(echo $* | sed -s 's|recovery-||')"; \
 	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "4" ] || [ "$(KERNEL_BOOTIMAGE_VERSION)" -eq "3" ]; then \
@@ -323,12 +389,15 @@ out/KERNEL_OBJ/boot-%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/boot-default.img
 	cp -v $< $@
 
+out/KERNEL_OBJ/vendor_boot.img: out/KERNEL_OBJ/vendor_boot-default.img
+	cp -v $< $@
+
 out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/boot-recovery-default.img
 	cp -v $< $@
 
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
 
-override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/KERNEL_OBJ/modules-installed-stamp out/dtb-stamp
+override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/vendor_boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/KERNEL_OBJ/modules-installed-stamp out/dtb-stamp
 
 kernel_snippet_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
@@ -358,6 +427,10 @@ ifeq ($(DEVICE_VBMETA_REQUIRED),1)
 	cp -v $(KERNEL_OUT)/vbmeta.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/vbmeta.img-$(KERNEL_RELEASE)
 endif
 
+ifeq ($(KERNEL_BOOTIMAGE_GENERATE_VENDOR_BOOT),1)
+	cp -v $(KERNEL_OUT)/vendor_boot.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/vendor_boot.img-$(KERNEL_RELEASE)
+endif
+
 	# Generate flash-bootimage settings
 	mkdir -p $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage
 ifeq ($(FLASH_ENABLED), 1)
@@ -379,6 +452,12 @@ ifeq ($(FLASH_ENABLED), 1)
 else
 	echo "FLASH_ENABLED=no" \
 		> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf
+endif
+
+	# Handle devices with vendor_boot
+ifeq ($(KERNEL_BOOTIMAGE_GENERATE_VENDOR_BOOT),1)
+	cat /usr/share/linux-packaging-snippets/flash-bootimage-template-vendor_boot-extend.in \
+		>> $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/lib/flash-bootimage/$(KERNEL_RELEASE).conf
 endif
 
 	# Handle legacy devices

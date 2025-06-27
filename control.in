@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Droidian porters <info@droidian.org>
 XS-Droidian-Host-Arch: @DEB_BUILD_FOR@
 XS-Droidian-Build-On: @DEB_BUILD_ON@
+XS-Droidian-Compact-Changelog: yes
 Build-Depends: build-essential,
                dpkg-dev,
                findutils,

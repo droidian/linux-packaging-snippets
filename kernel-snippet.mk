@@ -27,6 +27,17 @@
 
 include $(CURDIR)/debian/kernel-info.mk
 
+# Host arch detection
+# Comment DEB_BUILD_ON in kernel-info.mk to enable the feature.
+ifndef DEB_BUILD_ON
+HOST_ARCH = $(shell uname -m)
+ifeq ($(HOST_ARCH), aarch64)
+	DEB_BUILD_ON = arm64
+else ifeq ($(HOST_ARCH), x86_64)
+	DEB_BUILD_ON = amd64
+endif
+endif
+
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	NUMJOBS := $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 else

@@ -234,6 +234,8 @@ BUILD_PATH = /usr/lib/llvm-android-$(CLANG_VERSION)/bin
 DEB_TOOLCHAIN = linux-initramfs-halium-generic:arm64, binutils-aarch64-linux-gnu, gcc-4.9-aarch64-linux-android, g++-4.9-aarch64-linux-android, libgcc-4.9-dev-aarch64-linux-android-cross
 
 # Where we're building on
+# Comment DEB_BUILD_ON to enable host arch autodetection.
+# Only amd64 and arm64 archs are supported yet.
 DEB_BUILD_ON = amd64
 
 # Where we're going to run this kernel on

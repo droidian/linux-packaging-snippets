@@ -13,7 +13,7 @@ KERNEL_BASE_VERSION = 4.4-0
 # The kernel cmdline to use
 KERNEL_BOOTIMAGE_CMDLINE = put-cmdline-here
 
-# Slug for the device vendor. This is going to be used in the KERNELRELASE
+# Slug for the device vendor. This is going to be used in the KERNELRELEASE
 # and package names.
 DEVICE_VENDOR = vendor
 

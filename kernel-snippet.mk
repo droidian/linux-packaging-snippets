@@ -304,7 +304,15 @@ out/KERNEL_OBJ/initramfs.lz4:
 		cp -Rv $${OVERLAY_DIR}/* .; \
 		find . | cpio -o -R 0:0 -H newc | lz4 -9 -l > $(BASEDIR)/$@; \
 	else \
-		cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic.lz4 $@; \
+		if [ "$(grep "CONFIG_INITRAMFS_SOURCE=\"\"" $(KERNEL_OUT)/.config)" ]; then \
+			cp /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic.lz4 $@; \
+		else \
+			tmpdir=$$(mktemp -d); \
+			cd $${tmpdir}; \
+			lz4 -c -d /usr/lib/$(DEB_HOST_MULTIARCH)/halium-generic-initramfs/initrd.img-halium-generic.lz4 | cpio -i; \
+			find . ! -type d ! -name halium ! -name telnet ! -name init -delete; \
+			find . | cpio -o -R 0:0 -H newc | lz4 -9 -l > $(BASEDIR)/$@; \
+		fi; \
 	fi
 
 out/KERNEL_OBJ/initramfs.recovery-lz4:
@@ -397,6 +405,13 @@ out/KERNEL_OBJ/boot-%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.
 		avbtool add_hash_footer --image $@ --partition_name boot --partition_size $(KERNEL_BOOTIMAGE_PARTITION_SIZE); \
 	fi;
 
+out/KERNEL_OBJ/init_boot-%.img: out/KERNEL_OBJ/initramfs.%
+	eval mkbootimg \
+		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
+		--ramdisk $< \
+		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
+		-o $@
+
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/boot-default.img
 	cp -v $< $@
 
@@ -406,9 +421,16 @@ out/KERNEL_OBJ/vendor_boot.img: out/KERNEL_OBJ/vendor_boot-default.img
 out/KERNEL_OBJ/recovery.img: out/KERNEL_OBJ/boot-recovery-default.img
 	cp -v $< $@
 
+out/KERNEL_OBJ/init_boot.img: out/KERNEL_OBJ/init_boot-default.img
+	cp -v $< $@
+
 override_dh_auto_configure: debian/control out/KERNEL_OBJ/.config path-override-prepare
 
-override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/vendor_boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/KERNEL_OBJ/modules-installed-stamp out/dtb-stamp
+ifneq ($(BUILD_SKIP_MODULES),1)
+override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/vendor_boot.img out/KERNEL_OBJ/init_boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/modules-stamp out/dtb-stamp
+else
+override_dh_auto_build: out/KERNEL_OBJ/target-dtb.default out/KERNEL_OBJ/boot.img out/KERNEL_OBJ/vendor_boot.img out/KERNEL_OBJ/init_boot.img out/KERNEL_OBJ/recovery.img out/KERNEL_OBJ/dtbo.img out/KERNEL_OBJ/vbmeta.img out/dtb-stamp
+endif
 
 kernel_snippet_install:
 	mkdir -p $(CURDIR)/debian/linux-image-$(KERNEL_RELEASE)/boot
@@ -430,6 +452,9 @@ endif
 	mkdir -p $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot
 	cp -v $(KERNEL_OUT)/boot.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/boot.img-$(KERNEL_RELEASE)
 	cp -v $(KERNEL_OUT)/recovery.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/recovery.img-$(KERNEL_RELEASE)
+ifeq ($(DEVICE_HAS_INIT_BOOT),1)
+	cp -v $(KERNEL_OUT)/init_boot.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/init_boot.img-$(KERNEL_RELEASE)
+endif
 ifeq ($(KERNEL_IMAGE_WITH_DTB_OVERLAY),1)
 	cp -v $(KERNEL_OUT)/dtbo.img $(CURDIR)/debian/linux-bootimage-$(KERNEL_RELEASE)/boot/dtbo.img-$(KERNEL_RELEASE)
 endif

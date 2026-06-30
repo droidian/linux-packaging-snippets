@@ -26,6 +26,9 @@ DEVICE_MODEL = device1
 # Marketing-friendly full-name. This will be used inside package descriptions
 DEVICE_FULL_NAME = Vendor Device 1
 
+# Set to 1 if your device has an init_boot partition.
+DEVICE_HAS_INIT_BOOT = 0
+
 # Whether to use configuration fragments to augment the kernel configuration.
 # If unsure, keep this to 0.
 KERNEL_CONFIG_USE_FRAGMENTS = 0

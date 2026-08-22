@@ -409,7 +409,7 @@ out/KERNEL_OBJ/boot-%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.
 	fi;
 
 out/KERNEL_OBJ/init_boot-%.img: out/KERNEL_OBJ/initramfs.%
-        if [ "$(KERNEL_BOOTIMAGE_VERSION)" -gt "3" ]; then \
+	if [ "$(KERNEL_BOOTIMAGE_VERSION)" -gt "3" ]; then \
 		eval mkbootimg \
 			--header_version $(KERNEL_BOOTIMAGE_VERSION) \
 			--ramdisk $< \

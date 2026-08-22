@@ -409,11 +409,15 @@ out/KERNEL_OBJ/boot-%.img: out/KERNEL_OBJ/initramfs.% out/KERNEL_OBJ/target-dtb.
 	fi;
 
 out/KERNEL_OBJ/init_boot-%.img: out/KERNEL_OBJ/initramfs.%
-	eval mkbootimg \
-		--header_version $(KERNEL_BOOTIMAGE_VERSION) \
-		--ramdisk $< \
-		--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
-		-o $@
+        if [ "$(KERNEL_BOOTIMAGE_VERSION)" -gt "3" ]; then \
+		eval mkbootimg \
+			--header_version $(KERNEL_BOOTIMAGE_VERSION) \
+			--ramdisk $< \
+			--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
+			-o $@ \
+	else \
+		touch $@; \
+	fi;
 
 out/KERNEL_OBJ/boot.img: out/KERNEL_OBJ/boot-default.img
 	cp -v $< $@

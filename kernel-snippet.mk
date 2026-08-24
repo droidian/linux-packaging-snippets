@@ -414,7 +414,7 @@ out/KERNEL_OBJ/init_boot-%.img: out/KERNEL_OBJ/initramfs.%
 			--header_version $(KERNEL_BOOTIMAGE_VERSION) \
 			--ramdisk $< \
 			--pagesize $(KERNEL_BOOTIMAGE_PAGE_SIZE) \
-			-o $@ \
+			-o $@; \
 	else \
 		touch $@; \
 	fi;
